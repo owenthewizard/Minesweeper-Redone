@@ -160,6 +160,9 @@ class Minesweeper():
         if self[r, c].has_mine:
             self.mines_flagged += 1
 
+        if self.flags_placed == self.mines and self.mines_flagged == self.mines:
+            self.result = True
+
     def unflag(self, r, c):
         """Remove a flag from (r, c)."""
 
@@ -209,7 +212,7 @@ class Minesweeper():
             self.reveal(r, c)
             return
 
-        if self[r, c].flagged:
+        if self[r, c].flagged or self[r, c].revealed:
             return
 
         self[(r, c)].revealed = True
@@ -217,13 +220,13 @@ class Minesweeper():
         if self[(r, c)].has_mine:
             for i in range(self.rows):
                 for j in range(self.columns):
-                    if not self[(i, j)].revealed and self[(i, j)].has_mine:
+                    if self[(i, j)].has_mine:
+                        self[(i, j)].flagged = False
                         self.reveal(i, j)
             self.result = False
 
         if self[(r, c)].adjacent_mines == 0:
             for C in self._adjacents(r, c):
-                if not self[C].revealed:
                     self.reveal(*C)
 
         if self.flags_placed == self.mines and self.mines_flagged == self.mines:
