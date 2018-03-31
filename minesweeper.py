@@ -60,8 +60,8 @@ class Cell():
     """A representation of a cell in a game of minesweeper."""
 
     def __init__(self):
-        # FIXME
-        """TBD"""
+        """Create a new Cell."""
+
         self.adjacent_mines = 0
         self.flagged = False
         self.has_mine = False
@@ -86,7 +86,14 @@ class Minesweeper():
     """An instance of the game."""
 
     def _test_bounds(self, r, c):
-        """Check that (r, c) is within the board."""
+        """Check that (r, c) is within the board.
+
+        Args:
+            r: row of cell to test
+            c: column of cell to test
+        Raises:
+            IndexError if (r, c) is not within the board
+        """
 
         if r < 0 or r >= self.rows:
             raise IndexError
@@ -94,7 +101,16 @@ class Minesweeper():
             raise IndexError
 
     def _test_bounds_nonfatal(self, r, c):
-        """Check that (r, c) is within the board."""
+        """Check that (r, c) is within the board.
+
+        Args:
+            r: row of cell to test
+            c: column of cell to test
+
+        Returns:
+            True if cell is within the board
+            False if cell is not within the board
+            """
 
         if r < 0 or r >= self.rows:
             return False
@@ -132,12 +148,25 @@ class Minesweeper():
             self.mines = (rows * columns) // 3
 
     def __getitem__(self, coordinates):
+        """Get the cell at coordinates.
+
+        Args:
+            coordinates: a tuple of the row and column to retrieve
+        Returns:
+            An instance of Cell()
+        """
+
         r, c = coordinates
         self._test_bounds(r, c)
         return self.board[r][c]
 
     def flag(self, r, c):
-        """Flag (r, c) as a mine."""
+        """Flag (r, c) as a mine.
+
+        Args:
+            r: row of cell to flag
+            c: column of cell to flag
+        """
 
         self._test_bounds(r, c)
         self[r, c].flagged = True
@@ -150,7 +179,12 @@ class Minesweeper():
             self.result = True
 
     def unflag(self, r, c):
-        """Remove a flag from (r, c)."""
+        """Remove a flag from (r, c).
+
+        Args:
+            r: row of cell to unflag
+            c: column of cell to unflag
+        """
 
         self._test_bounds(r, c)
         self[r, c].flagged = False
@@ -159,7 +193,12 @@ class Minesweeper():
             self.mines_flagged -= 1
 
     def _count_adjacent_mines(self, r, c):
-        """Count mined cells adjacent to (r, c)."""
+        """Count mined cells adjacent to (r, c).
+
+        Args:
+            r: row of cell
+            c: column of cell
+        """
 
         found_mines = 0
         for C in self._adjacents(r, c):
@@ -168,6 +207,16 @@ class Minesweeper():
         return found_mines
 
     def _adjacents(self, r, c):
+        """Return a set of cells adjacent to (r, c)
+
+        Args:
+            r: row of cell
+            c: column of cell
+
+        Returns:
+            A set of cells adjacent to (r, c)
+        """
+
         # gross!
         return set((x, y)
                    for x in {r - 1 if r > 0 else r, r,
@@ -177,10 +226,21 @@ class Minesweeper():
                    if (x, y) != (r, c))
 
     def game_over(self) -> bool:
-        """Is the game over?"""
+        """Is the game over?
+
+        Returns:
+            True if the game is over
+            False otherwise
+        """
         return self.result is not None
 
     def _place_mines(self, protected):
+        """Place mines pseudo-randomly around the board, except for protected.
+
+        Args:
+            protected: a tuple of a row and column that will never receive a
+                       mine
+        """
         placed = 0
         while placed < self.mines:
             C = (randrange(self.rows), randrange(self.columns))
@@ -191,7 +251,12 @@ class Minesweeper():
                     self[D].adjacent_mines += 1
 
     def reveal(self, r, c):
-        """Reveal the cell at (r, c)."""
+        """Reveal the cell at (r, c).
+
+        Args:
+            r: row of cell to reveal
+            c: column of cell to reveal
+        """
 
         if not self.generated:
             self._place_mines((r, c))
@@ -236,10 +301,10 @@ class Minesweeper():
         return board
 
     def play(self):
-        """Start an interactive game"""
+        """Start an interactive game."""
 
-        def get_sanitized_tup():
-            """Internal use"""
+        def _get_sanitized_tup():
+            """Internal use, get a sanitized tuple-ish."""
 
             S = "\0"
             # FIXME this doesn't work
@@ -257,11 +322,11 @@ class Minesweeper():
                 cmd = input("Enter a command, or h for help: ")
 
             if cmd == "r":
-                self.reveal(*get_sanitized_tup())
+                self.reveal(*_get_sanitized_tup())
             elif cmd == "f":
-                self.flag(*get_sanitized_tup())
+                self.flag(*_get_sanitized_tup())
             elif cmd == "u":
-                self.unflag(*get_sanitized_tup())
+                self.unflag(*_get_sanitized_tup())
             else:
                 print("f: flag a cell\nh: show this help\nr: reveal a cell\n"
                       "u: unflag a cell.")
