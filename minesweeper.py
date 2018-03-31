@@ -77,9 +77,15 @@ class Cell():
         # disgusting
         return getattr(Symbols, _ENGLISH[self.adjacent_mines].upper()).value
 
-    def status(self):
-        """Alias to self.__str__()."""
-        return self.__str__()
+    def __repr__(self):
+        if self.flagged:
+            return "flagged"
+        if not self.revealed:
+            return "unknown"
+        if self.has_mine:
+            return "mine"
+
+        return self.adjacent_mines
 
 
 class Minesweeper():
@@ -91,13 +97,12 @@ class Minesweeper():
         Args:
             r: row of cell to test
             c: column of cell to test
+
         Raises:
             IndexError if (r, c) is not within the board
         """
 
-        if r < 0 or r >= self.rows:
-            raise IndexError
-        if c < 0 or c >= self.columns:
+        if (r < 0 or r >= self.rows) or (c < 0 or c >= self.columns):
             raise IndexError
 
     def _test_bounds_nonfatal(self, r, c):
@@ -110,13 +115,9 @@ class Minesweeper():
         Returns:
             True if cell is within the board
             False if cell is not within the board
-            """
+        """
 
-        if r < 0 or r >= self.rows:
-            return False
-        if c < 0 or r >= self.columns:
-            return False
-        return True
+        return (r >= 0 and r < self.rows) and (c >= 0 and c < self.columns)
 
     def __init__(self, rows, columns, mines=None):
         """Creates a new instance of a Minesweeper game.
@@ -152,6 +153,7 @@ class Minesweeper():
 
         Args:
             coordinates: a tuple of the row and column to retrieve
+
         Returns:
             An instance of Cell()
         """
@@ -207,23 +209,23 @@ class Minesweeper():
         return found_mines
 
     def _adjacents(self, r, c):
-        """Return a set of cells adjacent to (r, c)
+        """Return a list of tuples adjacent to (r, c)
 
         Args:
             r: row of cell
             c: column of cell
 
         Returns:
-            A set of cells adjacent to (r, c)
+            A list of tuples adjacent to (r, c)
         """
 
         # gross!
-        return set((x, y)
-                   for x in {r - 1 if r > 0 else r, r,
-                             r + 1 if r < self.rows - 1 else r}
-                   for y in {c - 1 if c > 0 else c, c,
-                             c + 1 if c < self.columns - 1 else c}
-                   if (x, y) != (r, c))
+        return [(x, y)
+                for x in {r - 1 if r > 0 else r, r,
+                          r + 1 if r < self.rows - 1 else r}
+                for y in {c - 1 if c > 0 else c, c,
+                          c + 1 if c < self.columns - 1 else c}
+                if (x, y) != (r, c)]
 
     def game_over(self) -> bool:
         """Is the game over?
@@ -257,6 +259,8 @@ class Minesweeper():
             r: row of cell to reveal
             c: column of cell to reveal
         """
+
+        self._test_bounds(r, c)
 
         if not self.generated:
             self._place_mines((r, c))
