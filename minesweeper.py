@@ -236,3 +236,8 @@ class Minesweeper():
                 board += "{} ".format(C)
             board += "\n"
 
+        # TODO: generate cheeky messages
+        if self.game_over():
+            board += "Nice job, you won!" \
+                if self.result else "Sorry, you lost!"
+        return board
