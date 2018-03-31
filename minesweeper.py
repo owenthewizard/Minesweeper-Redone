@@ -1,3 +1,5 @@
+"""A game of minesweeper."""
+
 from enum import Enum
 from random import randrange
 
@@ -19,43 +21,45 @@ _ENGLISH = {
     8: "eight"
 }
 
+
 class Symbols(Enum):
     """Symbols used to denote cells."""
 
     if USE_UNICODE:
-        ZERO    = "□"
-        ONE     = "①"
-        TWO     = "②"
-        THREE   = "③"
-        FOUR    = "④"
-        FIVE    = "⑤"
-        SIX     = "⑥"
-        SEVEN   = "⑦"
-        EIGHT   = "⑧"
-        
-        FLAG    = "🚩"
-        MINE    = "💣"
+        ZERO = "□"
+        ONE = "①"
+        TWO = "②"
+        THREE = "③"
+        FOUR = "④"
+        FIVE = "⑤"
+        SIX = "⑥"
+        SEVEN = "⑦"
+        EIGHT = "⑧"
+
+        FLAG = "🚩"
+        MINE = "💣"
         UNKNOWN = "�"
     else:
-        ZERO    = "0"
-        ONE     = "1"
-        TWO     = "2"
-        THREE   = "3"
-        FOUR    = "4"
-        FIVE    = "5"
-        SIX     = "6"
-        SEVEN   = "7"
-        EIGHT   = "8"
+        ZERO = "0"
+        ONE = "1"
+        TWO = "2"
+        THREE = "3"
+        FOUR = "4"
+        FIVE = "5"
+        SIX = "6"
+        SEVEN = "7"
+        EIGHT = "8"
 
-        FLAG    = "F"
-        MINE    = "*"
+        FLAG = "F"
+        MINE = "*"
         UNKNOWN = "?"
+
 
 class Cell():
     """A representation of a cell in a game of minesweeper."""
 
     def __init__(self):
-        #FIXME
+        # FIXME
         """TBD"""
         self.adjacent_mines = 0
         self.flagged = False
@@ -63,7 +67,6 @@ class Cell():
         self.revealed = False
 
     def __str__(self):
-
         if self.flagged:
             return Symbols.FLAG.value
         if not self.revealed:
@@ -73,21 +76,10 @@ class Cell():
         # disgusting
         return getattr(Symbols, _ENGLISH[self.adjacent_mines].upper()).value
 
-#    def __repr__(self):
-#
-#        if self.revealed:
-#            return str(self.adjacent_mines)
-#        else:
-#            return ""
-
-    # Because assignments aren't allowed in lambdas
-    def _mine(self):
-        self.has_mine = True
-
     def status(self):
         """Alias to self.__str__()."""
-
         return self.__str__()
+
 
 class Minesweeper():
     """An instance of the game."""
@@ -108,45 +100,44 @@ class Minesweeper():
         if c < 0 or r >= self.columns:
             return False
         return True
-    
+
     def __init__(self, rows, columns, mines=None):
         """Creates a new instance of a Minesweeper game.
-        
+
         Args:
             rows: the number of rows on the board
             columns: the number of columns on the board
             mines: the number of mines on the board
         """
-        
+
         if rows <= 0:
             raise IndexError("Rows must be greater than zero")
         if columns <= 0:
             raise IndexError("Columns must be greater than zero")
         if mines is not None and mines >= rows * columns:
             raise IndexError("Mines must be less than rows * columns")
-        
+
         self.rows = rows
         self.columns = columns
+        self.generated = False
+        self.board = [[Cell() for _ in range(rows)] for _ in range(columns)]
+        self.flags_placed = 0
+        self.mines_flagged = 0
+        self.result = None
+
         if mines is not None:
             self.mines = mines
         else:
             self.mines = (rows * columns) // 3
-        self.generated = False
-        
-        self.board = [[Cell() for _ in range(rows)] for _ in range(columns)]
 
-        self.flags_placed = 0
-        self.mines_flagged = 0
-        self.result = None
-        
+
     def __getitem__(self, coordinates):
-        
         r, c = coordinates
         self._test_bounds(r, c)
         return self.board[r][c]
 
 #    def __setitem__(self, coordinates, value):
-#        
+#
 #        r, c = coordinates
 #        self._test_bounds(r, c)
 #        self.board[r][c] = value
@@ -160,7 +151,8 @@ class Minesweeper():
         if self[r, c].has_mine:
             self.mines_flagged += 1
 
-        if self.flags_placed == self.mines and self.mines_flagged == self.mines:
+        if self.flags_placed == self.mines \
+                and self.mines_flagged == self.mines:
             self.result = True
 
     def unflag(self, r, c):
@@ -171,7 +163,7 @@ class Minesweeper():
         self.flags_placed -= 1
         if not self[r, c].has_mine:
             self.mines_flagged -= 1
-    
+
     def _count_adjacent_mines(self, r, c):
         """Count mined cells adjacent to (r, c)."""
 
@@ -183,17 +175,19 @@ class Minesweeper():
         return found_mines
 
     def _adjacents(self, r, c):
+        return set((x, y)
+                   for x in {r - 1 if r > 0 else r, r,
+                             r + 1 if r < self.rows - 1 else r}
+                   for y in {c - 1 if c > 0 else c, c,
+                             c + 1 if c < self.columns - 1 else c}
+                   if (x, y) != (r, c))
 
-        return set((x, y) for x in {r - 1 if r > 0 else r, r, r + 1 if r < self.rows - 1 else r} for y in {c - 1 if c > 0 else c, c, c + 1 if c < self.columns - 1 else c} if (x, y) != (r, c))
-
-    
     def game_over(self) -> bool:
         """Is the game over?"""
 
         return self.result is not None
 
     def _place_mines(self, protected):
-
         placed = 0
         while placed < self.mines:
             C = (randrange(self.rows), randrange(self.columns))
@@ -224,16 +218,17 @@ class Minesweeper():
                         self[(i, j)].flagged = False
                         self.reveal(i, j)
             self.result = False
+            return
 
         if self[(r, c)].adjacent_mines == 0:
             for C in self._adjacents(r, c):
-                    self.reveal(*C)
+                self.reveal(*C)
 
-        if self.flags_placed == self.mines and self.mines_flagged == self.mines:
+        if self.flags_placed == self.mines \
+                and self.mines_flagged == self.mines:
             self.result = True
 
     def __str__(self):
-
         board = str()
 
         for R in self.board:
@@ -241,7 +236,3 @@ class Minesweeper():
                 board += "{} ".format(C)
             board += "\n"
 
-        # TODO: generate cheeky messages
-        if self.game_over():
-            board += "Nice job, you won!" if self.result else "Sorry, you lost!"
-        return board
