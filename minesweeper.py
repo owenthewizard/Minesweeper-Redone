@@ -332,3 +332,16 @@ class Minesweeper():
                       "u: unflag a cell.")
         else:
             print(self)
+
+    def restart(self, rows=None, cols=None, mines=None):
+        """Restart the game.
+
+        Args:
+            rows: number of rows for new game, none for no change
+            cols: number of columns for new game, none for no change
+            mines: number of mines for new game, none for no change
+        """
+
+        self.__init__(rows if rows is not None else self.rows,
+                      cols if cols is not None else self.columns,
+                      mines if mines is not None else self.mines)
