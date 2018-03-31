@@ -142,6 +142,9 @@ class Minesweeper():
         self.flags_placed = 0
         self.mines_flagged = 0
         self.result = None
+        # FIXME there's definetely a better way to keep a counter in a
+        # recursive function
+        self.last_revealed = 0
 
         if mines is not None:
             self.mines = mines
@@ -259,36 +262,42 @@ class Minesweeper():
             r: row of cell to reveal
             c: column of cell to reveal
         """
+        # FIXME: maybe this could be a decorator or something?
 
-        self._test_bounds(r, c)
+        def _reveal(x, y):
+            self._test_bounds(x, y)
 
-        if not self.generated:
-            self._place_mines((r, c))
-            self.generated = True
-            self.reveal(r, c)
-            return
+            if not self.generated:
+                self._place_mines((x, y))
+                self.generated = True
+                _reveal(x, y)
 
-        if self[r, c].flagged or self[r, c].revealed:
-            return
+            if self[x, y].flagged or self[x, y].revealed:
+                return
 
-        self[(r, c)].revealed = True
+            self[(x, y)].revealed = True
+            self.last_revealed += 1
 
-        if self[(r, c)].has_mine:
-            for i in range(self.rows):
-                for j in range(self.columns):
-                    if self[(i, j)].has_mine:
-                        self[(i, j)].flagged = False
-                        self.reveal(i, j)
-            self.result = False
-            return
+            if self[(x, y)].has_mine:
+                for i in range(self.rows):
+                    for j in range(self.columns):
+                        if self[(i, j)].has_mine:
+                            self[(i, j)].flagged = False
+                            _reveal(i, j)
+                self.result = False
+                return
 
-        if self[(r, c)].adjacent_mines == 0:
-            for C in self._adjacents(r, c):
-                self.reveal(*C)
+            if self[(x, y)].adjacent_mines == 0:
+                for C in self._adjacents(x, y):
+                    _reveal(*C)
 
-        if self.flags_placed == self.mines \
-                and self.mines_flagged == self.mines:
-            self.result = True
+            if self.flags_placed == self.mines \
+                    and self.mines_flagged == self.mines:
+                self.result = True
+
+        self.last_revealed = 0
+        _reveal(r, c)
+        return self.last_revealed
 
     def __str__(self):
         board = str()
