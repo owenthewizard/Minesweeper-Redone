@@ -2,6 +2,7 @@
 
 from enum import Enum
 from random import randrange
+from re import compile as regex_compile
 
 # TODO: move this somewhere else
 # TODO: autodetect this
@@ -130,17 +131,10 @@ class Minesweeper():
         else:
             self.mines = (rows * columns) // 3
 
-
     def __getitem__(self, coordinates):
         r, c = coordinates
         self._test_bounds(r, c)
         return self.board[r][c]
-
-#    def __setitem__(self, coordinates, value):
-#
-#        r, c = coordinates
-#        self._test_bounds(r, c)
-#        self.board[r][c] = value
 
     def flag(self, r, c):
         """Flag (r, c) as a mine."""
@@ -168,13 +162,13 @@ class Minesweeper():
         """Count mined cells adjacent to (r, c)."""
 
         found_mines = 0
-        # gross!
         for C in self._adjacents(r, c):
             if self[C].has_mine:
                 found_mines += 1
         return found_mines
 
     def _adjacents(self, r, c):
+        # gross!
         return set((x, y)
                    for x in {r - 1 if r > 0 else r, r,
                              r + 1 if r < self.rows - 1 else r}
@@ -184,7 +178,6 @@ class Minesweeper():
 
     def game_over(self) -> bool:
         """Is the game over?"""
-
         return self.result is not None
 
     def _place_mines(self, protected):
@@ -241,3 +234,36 @@ class Minesweeper():
             board += "Nice job, you won!" \
                 if self.result else "Sorry, you lost!"
         return board
+
+    def play(self):
+        """Start an interactive game"""
+
+        def get_sanitized_tup():
+            """Internal use"""
+
+            S = "\0"
+            # FIXME this doesn't work
+            # compile(r"[0-{}],( ?)*[0-{}]".format(
+            #    self.rows, self.columns))
+            while not regex_compile(r"[0-9]*,( ?)*[0-9]").match(S):
+                S = input("Enter the cell you want to operate on as a tuple, "
+                          "without parentheses. For example `2, 3` or `2,3`: ")
+            return map(int, S.split(","))
+
+        while not self.game_over():
+            print(self)
+            cmd = str()
+            while cmd not in {"f", "h", "r", "u"}:
+                cmd = input("Enter a command, or h for help: ")
+
+            if cmd == "r":
+                self.reveal(*get_sanitized_tup())
+            elif cmd == "f":
+                self.flag(*get_sanitized_tup())
+            elif cmd == "u":
+                self.unflag(*get_sanitized_tup())
+            else:
+                print("f: flag a cell\nh: show this help\nr: reveal a cell\n"
+                      "u: unflag a cell.")
+        else:
+            print(self)

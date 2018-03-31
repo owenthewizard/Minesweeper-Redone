@@ -1,13 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
+from minesweeper import *
 from code import interact
-from random import randrange
 
-#from minesweeper import *
-import minesweeper as ms
-
-c = ms.Cell()
-c.revealed = True
-c.adjacent_mines = randrange(9)
-
+game = Minesweeper(10, 10)
 interact(local=locals())
