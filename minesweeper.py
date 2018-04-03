@@ -255,6 +255,50 @@ class Minesweeper():
                 for D in self._adjacents(*C):
                     self[D].adjacent_mines += 1
 
+    def _reveal_helper(self, r, c, count):
+        """Helper function that actually does the revealing."""
+
+        self._test_bounds(r, c)
+
+        if not self.generated:
+            # TODO make a logger class
+            print("Board is not generated")
+            self._place_mines((r, c))
+            print("Generating board")
+            self.generated = True
+            print("Board generated")
+            # self._reveal_helper(r, c)
+
+        if self[r, c].flagged or self[r, c].revealed:
+            print("({}, {}) is flagged or already revealed".format(r, c))
+            return
+
+        self[r, c].revealed = True
+        print("Revealing ({}, {})".format(r, c))
+        count[0] += 1
+        print("Incrementing count")
+
+        if self[r, c].has_mine:
+            print("({}, {}) has a mine, revealing all mines".format(r, c))
+            for i in range(self.rows):
+                for j in range(self.columns):
+                    if self[(i, j)].has_mine:
+                        self[(i, j)].flagged = False
+                        self._reveal_helper(i, j, count)
+            print("All mines revealed, game is lost")
+            self.result = False
+            return
+
+        if self[r, c].adjacent_mines == 0:
+            print("({}, {}) has zero (0) adjacent mines, revealing adjacents".format(r, c))
+            print(len(self._adjacents(r, c)))
+            for C in self._adjacents(r, c):
+                self._reveal_helper(*C, count)
+
+        if self.flags_placed == self.mines \
+                and self.mines_flagged == self.mines:
+            self.result = True
+
     def reveal(self, r, c):
         """Reveal the cell at (r, c).
 
@@ -262,42 +306,10 @@ class Minesweeper():
             r: row of cell to reveal
             c: column of cell to reveal
         """
-        # FIXME: maybe this could be a decorator or something?
 
-        def _reveal(x, y):
-            self._test_bounds(x, y)
-
-            if not self.generated:
-                self._place_mines((x, y))
-                self.generated = True
-                _reveal(x, y)
-
-            if self[x, y].flagged or self[x, y].revealed:
-                return
-
-            self[(x, y)].revealed = True
-            self.last_revealed += 1
-
-            if self[(x, y)].has_mine:
-                for i in range(self.rows):
-                    for j in range(self.columns):
-                        if self[(i, j)].has_mine:
-                            self[(i, j)].flagged = False
-                            _reveal(i, j)
-                self.result = False
-                return
-
-            if self[(x, y)].adjacent_mines == 0:
-                for C in self._adjacents(x, y):
-                    _reveal(*C)
-
-            if self.flags_placed == self.mines \
-                    and self.mines_flagged == self.mines:
-                self.result = True
-
-        self.last_revealed = 0
-        _reveal(r, c)
-        return self.last_revealed
+        count = [0]
+        self._reveal_helper(r, c, count)
+        return count[0]
 
     def __str__(self):
         board = str()
@@ -313,20 +325,15 @@ class Minesweeper():
                 if self.result else "Sorry, you lost!"
         return board
 
+    def _get_tup_helper(self):
+        S = str()
+        pat = regex_compile("([0-9]+),\W?([0-9]+)")
+        while not pat.match(S):
+            S = input("Enter a tuple, without parenthese: ")
+        return int(pat.match(S)[1]), int(pat.match(S)[2])
+
     def play(self):
         """Start an interactive game."""
-
-        def _get_sanitized_tup():
-            """Internal use, get a sanitized tuple-ish."""
-
-            S = "\0"
-            # FIXME this doesn't work
-            # compile(r"[0-{}],( ?)*[0-{}]".format(
-            #    self.rows, self.columns))
-            while not regex_compile(r"[0-9]*,( ?)*[0-9]").match(S):
-                S = input("Enter the cell you want to operate on as a tuple, "
-                          "without parentheses. For example `2, 3` or `2,3`: ")
-            return map(int, S.split(","))
 
         while not self.game_over():
             print(self)
@@ -335,11 +342,11 @@ class Minesweeper():
                 cmd = input("Enter a command, or h for help: ")
 
             if cmd == "r":
-                self.reveal(*_get_sanitized_tup())
+                self.reveal(*self._get_tup_helper())
             elif cmd == "f":
-                self.flag(*_get_sanitized_tup())
+                self.flag(*self._get_tup_helper())
             elif cmd == "u":
-                self.unflag(*_get_sanitized_tup())
+                self.unflag(*self._get_tup_helper())
             else:
                 print("f: flag a cell\nh: show this help\nr: reveal a cell\n"
                       "u: unflag a cell.")
