@@ -293,7 +293,7 @@ class Minesweeper():
             print("({}, {}) has zero (0) adjacent mines, revealing adjacents".format(r, c))
             print(len(self._adjacents(r, c)))
             for C in self._adjacents(r, c):
-                self._reveal_helper(*C, True count)
+                self._reveal_helper(*C, True, count)
 
         if self.flags_placed == self.mines \
                 and self.mines_flagged == self.mines:
