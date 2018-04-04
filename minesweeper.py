@@ -255,7 +255,7 @@ class Minesweeper():
                 for D in self._adjacents(*C):
                     self[D].adjacent_mines += 1
 
-    def _reveal_helper(self, r, c, count):
+    def _reveal_helper(self, r, c, recur, count):
         """Helper function that actually does the revealing."""
 
         self._test_bounds(r, c)
@@ -289,7 +289,7 @@ class Minesweeper():
             self.result = False
             return
 
-        if self[r, c].adjacent_mines == 0:
+        if self[r, c].adjacent_mines == 0 and recur:
             print("({}, {}) has zero (0) adjacent mines, revealing adjacents".format(r, c))
             print(len(self._adjacents(r, c)))
             for C in self._adjacents(r, c):
@@ -299,16 +299,17 @@ class Minesweeper():
                 and self.mines_flagged == self.mines:
             self.result = True
 
-    def reveal(self, r, c):
+    def reveal(self, r, c, recur=True):
         """Reveal the cell at (r, c).
 
         Args:
             r: row of cell to reveal
             c: column of cell to reveal
+            recur: recursively reveal cells with zero adjacent mines
         """
 
         count = [0]
-        self._reveal_helper(r, c, count)
+        self._reveal_helper(r, c, recur, count)
         return count[0]
 
     def __str__(self):
