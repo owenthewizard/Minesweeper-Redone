@@ -1,6 +1,7 @@
 """A solver for Minesweeper."""
 
 from collections import defaultdict, deque
+from time import time
 
 
 class Solver():
@@ -25,8 +26,8 @@ class Solver():
         #    defaultdict(lambda: game.mines / (game.rows * game.colums))
         self.probability = \
             [[game.mines / (game.rows * game.columns)
-              for _ in range(game.rows)]
-             for _ in range(game.columns)]
+              for _ in range(game.columns)]
+             for _ in range(game.rows)]
 
     def guess(self):
         """Reveals the cell with the lowest probability of being a mine."""
@@ -79,8 +80,8 @@ class Solver():
         elif len(undetected) == len(U):
             for C in U:
                 self.game.flag(*C)
-            self.update_queue.extendleftset((set(N) - set(F)) - set(U))
-        else:
+            self.update_queue.extendleft(set(N) - set(F) - set(U))
+        elif len(U) != 0:
             for x, y in N:
                 self.probability[x][y] = len(undetected) / len(U)
 
@@ -92,15 +93,23 @@ class Solver():
             c: column of cell to reveal
         """
 
-        self.game.reveal(r, c)
+        self.probability[r][c] = float("Inf")
+
+        if self.game[r, c].revealed:
+          return
+
+        self.game.reveal(r, c, False)
         for D in self.neighborhood(r, c):
-            #if self.game[D].revealed:
-            self.update_queue.appendleft(D)
+            if self.game[D].revealed:
+              self.update_queue.appendleft(D)
+            elif not self.game[D].revealed and self.game[r, c].adjacent_mines == 0:
+              self.reveal_queue.appendleft(D)
 
     def solve(self):
         """Attempt to solve the game."""
 
         steps = 0
+        timeout = time() + 5
         while not self.game.game_over():
             steps += 1
             if self.reveal_queue:
@@ -113,6 +122,8 @@ class Solver():
                 print("guessing")
                 self.guess()
             print(steps)
+            if time() > timeout:
+              raise RuntimeError("Timed out")
 
         print("Terminated after {} steps.".format(steps))
         if self.game.result:
